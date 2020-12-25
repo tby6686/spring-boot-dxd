@@ -1,0 +1,265 @@
+# spring-boot-dxd Common Config
+############################# 访问路径、端口tomcat start #############################
+server:
+  port: 8088
+  servlet:
+    context-path: /api
+  tomcat:
+    max-threads: 1000
+    min-spare-threads: 30
+    uri-encoding: UTF-8
+############################# 访问路径、端口tomcat end ###############################
+
+################################ spring config start ###############################
+spring:
+  application:
+    name: spring-boot-dxd
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  jackson:
+    date-format: yyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  banner:
+    charset: UTF-8
+    location: classpath:config/banner.txt
+  #使用ehcache 缓存(默认,可自定义扩展实现Icache接口)
+  cache:
+    type: ehcache
+    class-path: cn.com.topnetwork.dxd.cache.EhcacheCache
+
+# 当前项目maven激活环境，例如：dev/prod，对应pom.xml中profile设置值
+---
+spring:
+  profiles:
+    active: '@profileActive@'
+
+# logback.xml中有详细的日志配置
+logging:
+  config: classpath:config/logback.xml
+################################ spring config end #################################
+
+############################## spring-boot-dxd start ##############################
+spring-boot-dxd:
+ # 是否启用ansi控制台输出有颜色的字体
+  enable-ansi: true
+  # 服务器IP地址
+  server-ip: 127.0.0.1
+ # 资源访问路径
+  resource-access-path: /resource/
+  # 资源访问路径匹配：/resource/**
+  resource-access-patterns: ${spring-boot-dxd.resource-access-path}**
+  # 资源访问全路径前缀：http://127.0.0.1:8088/resource/
+  resource-access-url: http://${spring-boot-dxd.server-ip}:${server.port}${server.servlet.context-path}${spring-boot-dxd.resource-access-path}
+  # Swagger路径
+  swagger-paths: /swagger-ui.html,/docs,/doc.html,/swagger-resources/**,/webjars/**,/v2/api-docs,/csrf,/v2/api-docs-ext,/null/swagger-resources/**
+  ########################## Resource start ##########################
+  # 静态资源访问配置
+  resource-handlers: |
+    /static/**=classpath:/static/
+    swagger-ui.html=classpath:/META-INF/resources/
+    /webjars/**=classpath:/META-INF/resources/webjars/
+    doc.html=classpath:/META-INF/resources/
+  ########################## Resource end ############################
+  # Filter配置
+  filter:
+    request:
+      enable: true
+      url-patterns: /*
+      order: 1
+      async: true
+    xss:
+      enable: true
+      url-patterns: /*
+      order: 2
+      async: true
+ # 拦截器配置
+  interceptor:
+    permission:
+      enable: true
+      include-paths: /**
+    resource:
+      enable: false
+      include-paths: ${spring-boot-dxd.resource-access-patterns}
+  # AOP日志配置
+  aop:
+    log:
+      # 是否启用
+      enable: true
+      # 是否启用requestId
+      enable-request-id: true
+      # requestId生成规则: UUID
+      request-id-type: UUID
+      # NONE：不打印日志
+      # ORDER：请求和响应日志，按照执行顺序分开打印
+      # LINE：方法执行结束时，连续分开打印请求和响应日志
+      # MERGE：方法执行结束时，合并请求和响应日志，同时打印
+      log-print-type: ORDER
+      # 请求日志在控制台是否格式化输出，local环境建议开启，服务器环境设置为false
+      request-log-format: true
+      # 响应日志在控制台是否格式化输出，local环境建议开启，服务器环境设置为false
+      response-log-format: true
+      # 排除的路径
+      exclude-paths: /,/example
+    # 操作日志配置
+    operation-log:
+      # 是否启用
+      enable: true
+      # 排除的路径
+      exclude-paths: /login,/logout
+    # 登录日志配置
+    login-log:
+      # 是否启用
+      enable: true
+      # 登录地址
+      login-path: /login
+      # 登出地址
+      logout-path: /logout
+
+############################ CORS start ############################
+  # CORS跨域配置，默认允许跨域
+  cors:
+    # 是否启用跨域，默认启用
+    enable: true
+    # CORS过滤的路径，默认：/**
+    path: /**
+    # 允许访问的源
+    allowed-origins: '*'
+    # 允许访问的请求头
+    allowed-headers: '*'
+    # 是否允许发送cookie
+    allow-credentials: true
+    # 允许访问的请求方式
+    allowed-methods: OPTION,GET,POST
+    # 允许响应的头
+    exposed-headers: token
+    # 该响应的有效时间默认为30分钟，在有效时间内，浏览器无须为同一请求再次发起预检请求
+    max-age: 1800
+
+  ############################ CORS end ##############################
+  ######################## Spring Shiro start ########################
+  shiro:
+    # 是否启用
+    enable: true
+    # 权限配置
+    anon:
+      # 排除登录登出
+      - /login,/logout
+      # 排除静态资源
+      - /static/**,/templates/**
+      # 排除Swagger
+      - ${spring-boot-dxd.swagger-paths}
+      # 排除actuator
+      - /actuator/**
+      - # 排除首页
+      - /,/welcome.html
+    # 多行字符串权限配置
+    filter-chain-definitions: |
+      /resource/**=anon
+      /upload/**=anon
+    #permission-list:
+    #  - url: /a/b/
+    #    permission: anon
+    #  - urls: /c/d/,/e/f
+    #    permission: anon
+  ######################## Spring Shiro end ##########################
+
+  ############################ JWT start #############################
+  jwt:
+    # token请求头名称
+    token-name: token
+    # jwt密钥
+    secret: 0805c99fd2634c80b2cde8c7e4124468
+    # 发行人
+    issuer: ${spring.application.name}
+    # 观众
+    audience: web
+    # token过期时间,单位：秒 默认30分钟（1800秒）
+    expire-second: 1800
+    #缓存中token失效时间，单位：秒 默认60分钟（3600秒）
+    expire-cache-second: 3600
+    # 是否刷新token
+    refresh-token: true
+    # 刷新token倒计时，单位：分钟，默认5分钟.
+    refresh-token-countdown: 5
+    #过渡时间: 防止并发请求下，token刷新后旧token立马失效问题，单位：秒 默认2分钟
+    transition-second: 120
+  ############################ JWT end ###############################
+
+############################### spring-boot-dxd end ###############################
+
+
+############################### mybatis start #################################
+mybatis:
+  # MyBatis原生配置
+  configuration:
+    # 字段名称下划线转驼峰命名
+    map-underscore-to-camel-case: true
+  # mapper xml映射路径
+  mapper-locations: classpath*:mapper/**/*Mapper.xml
+################################ mybatis end ##################################
+
+############################### HikariCP 数据源配置 start ################################
+---
+spring:
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    cachePrepStmts: true
+    prepStmtCacheSize: 300
+    prepStmtCacheSqlLimit: 2048
+    useServerPrepStmts: true
+    useLocalSessionState: true
+    rewriteBatchedStatements: true
+    cacheResultSetMetadata: true
+    cacheServerConfiguration: true
+    elideSetAutoCommits: true
+    maintainTimeStats: false
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 20
+      idle-timeout: 10000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+############################### HikariCP 数据源配置 end ################################
+
+
+#################################### Swagger start #################################
+---
+spring-boot-dxd:
+  swagger:
+    # 是否启用
+    enable: true
+    base:
+      # 扫描的包，多个包使用逗号隔开
+      package:
+    contact:
+      email: tianbaoyan@topnetwork.com.cn
+      name: springboot.dxd
+      url: http://www.topnetwork.com.cn
+    description:
+    title: ${spring.application.name} API Documents
+    url: http://locahost:8088/swagger-ui.html
+    version: ${project.version}
+    # 自定义参数配置，可配置N个
+    parameter-config:
+      - name: ${spring-boot-dxd.jwt.token-name}
+        description: Token Request Header
+        # header, cookie, body, query
+        type: header
+        data-type: String
+        required: false
+        # 测试接口时，自动填充token的值
+        default-value:
+
+# knife4j配置
+knife4j:
+  enable: ${spring-boot-dxd.swagger.enable}
+  basic:
+    enable: true
+    username: admin
+    password: admin
+
+#################################### Swagger end ###################################
