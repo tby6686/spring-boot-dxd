@@ -11,7 +11,7 @@
         <module>dxd-common</module>
         <module>dxd-business</module>
     </modules>
-    <name>parent</name>
+    <name>dxd-parent</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>
