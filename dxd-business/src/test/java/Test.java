@@ -4,6 +4,7 @@ public class Test {
 
 
         //0.0214~0.022
+        //0.0214
         for(double i=0.0214;i<0.022;i=i+0.000001){
             double x=i;
             double a = 35* Math.pow(1+x,10);

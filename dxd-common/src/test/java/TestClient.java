@@ -14,6 +14,7 @@ public class TestClient {
 
     @Before
     public void testToken() throws Exception {
+        //this is test
         RestTemplate restTemplate = new RestTemplate();
 
         SysUserVo user = new SysUserVo();
